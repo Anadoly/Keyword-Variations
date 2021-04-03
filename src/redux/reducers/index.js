@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-
-const appReducer = combineReducers({});
+import { default as variations } from './variationsReducer';
+const appReducer = combineReducers({ variations });
 
 export default appReducer;

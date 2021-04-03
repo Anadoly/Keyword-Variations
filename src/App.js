@@ -1,10 +1,13 @@
 import { GlobalStyles } from 'utils';
+import { Home } from 'scenes';
+
+import 'utils/fetchIntercept';
 
 function App() {
   return (
     <div>
       <GlobalStyles />
-      <p>Crowd Analyzer Task</p>
+      <Home />
     </div>
   );
 }
