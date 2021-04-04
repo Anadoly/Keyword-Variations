@@ -2,7 +2,12 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { variationsActions } from 'redux/actions';
-import { arrayEquals, Colors } from 'utils';
+import {
+  arrayEquals,
+  Colors,
+  generateKeywordArray,
+  getWordFromCoursePosition,
+} from 'utils';
 import styled from '@emotion/styled';
 import uniq from 'lodash/uniq';
 
@@ -55,21 +60,14 @@ export class TextArea extends Component {
     const startPosition = e.target.selectionStart;
     const endPosition = e.target.selectionEnd;
     const spacers = queryMode ? 'OR' : ',';
-    const targetWord =
-      value.indexOf(spacers, endPosition) < 0
-        ? value.substring(
-            value.lastIndexOf(spacers, startPosition) < 0
-              ? 0
-              : value.lastIndexOf(spacers, startPosition)
-          )
-        : value.substring(
-            value.lastIndexOf(spacers, startPosition) < 0
-              ? 0
-              : value.lastIndexOf(spacers, startPosition),
-            value.indexOf(spacers, endPosition)
-          );
-    const currentWord = targetWord.replaceAll(spacers, '').trim();
-
+    const currentWord = getWordFromCoursePosition(
+      value,
+      startPosition,
+      endPosition,
+      spacers
+    );
+    console.log(value, startPosition, endPosition, spacers);
+    console.log(currentWord);
     if (searchedWords.includes(currentWord)) {
       const wordIndex = searchedWords.indexOf(currentWord);
       const wordBefore =
@@ -94,15 +92,9 @@ export class TextArea extends Component {
 
   onChange = (e) => {
     const { getVariations, searchedWords: lastWords, queryMode } = this.props;
-    const valueArray = queryMode
-      ? e.target.value.split(/or|OR|Or|oR/)
-      : e.target.value.split(',');
-    const words = [];
-    valueArray.forEach((word) => {
-      if (word.replaceAll(' ', '').replaceAll('"', '').length >= 3) {
-        return words.push(word.replaceAll('"', '').trim());
-      }
-    });
+    const splitter = queryMode ? /or|OR|Or|oR/ : ',';
+    const words = generateKeywordArray(e.target.value, splitter);
+    console.log(words);
     clearTimeout(timeout);
     if (words.length > 0 && !arrayEquals(lastWords)) {
       const searchWords = uniq([...words.reverse(), ...lastWords]);
@@ -131,7 +123,7 @@ export class TextArea extends Component {
           </label>
           <textarea
             onChange={this.onChange}
-            id={labelWord}
+            id={labelWord.replaceAll(' ', '-')}
             onClick={this.onClick}
           />
         </form>

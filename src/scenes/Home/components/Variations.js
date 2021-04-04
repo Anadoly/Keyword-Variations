@@ -110,7 +110,7 @@ export class Variations extends Component {
             </picture>{' '}
             {loading && <Loader />}{' '}
           </h2>
-          {variationsContent}
+          <div id="variations">{variationsContent}</div>
         </>
       </VariationsWrapper>
     );
