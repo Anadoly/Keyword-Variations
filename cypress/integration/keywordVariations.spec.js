@@ -40,12 +40,12 @@ context('Keyword Variations', () => {
     });
     cy.get('#and').type('بنك');
     cy.get('#variations > div').should(($variation) => {
-      expect($variation).to.have.length(3);
+      expect($variation).to.have.length(1);
       expect($variation.eq(0)).to.contain('بنك');
     });
     cy.get('#not').type('بنك مصر');
     cy.get('#variations > div').should(($variation) => {
-      expect($variation).to.have.length(3);
+      expect($variation).to.have.length(1);
       expect($variation.eq(0)).to.contain('بنك مصر');
     });
   });

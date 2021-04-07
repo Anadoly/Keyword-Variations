@@ -7,9 +7,9 @@ import {
   Colors,
   generateKeywordArray,
   getWordFromCoursePosition,
+  sortingWords,
 } from 'utils';
 import styled from '@emotion/styled';
-import uniq from 'lodash/uniq';
 
 let timeout = null;
 
@@ -52,56 +52,62 @@ export class TextArea extends Component {
     searchedWords: PropTypes.array.isRequired,
     queryMode: PropTypes.bool.isRequired,
     rearrangementVariations: PropTypes.func.isRequired,
+    clearVariations: PropTypes.func.isRequired,
   };
 
   onClick = (e) => {
-    const { searchedWords, rearrangementVariations, queryMode } = this.props;
+    if (e.target.value === '') {
+      return;
+    }
+
+    const {
+      searchedWords,
+      rearrangementVariations,
+      queryMode,
+      getVariations,
+    } = this.props;
     const value = e.target.value;
     const startPosition = e.target.selectionStart;
     const endPosition = e.target.selectionEnd;
     const spacers = queryMode ? 'OR' : ',';
+    const splitter = queryMode ? /or|OR|Or|oR/ : ',';
     const currentWord = getWordFromCoursePosition(
       value,
       startPosition,
       endPosition,
       spacers
     );
-    console.log(value, startPosition, endPosition, spacers);
-    console.log(currentWord);
+
     if (searchedWords.includes(currentWord)) {
-      const wordIndex = searchedWords.indexOf(currentWord);
-      const wordBefore =
-        searchedWords[
-          wordIndex === 0 ? searchedWords.length - 1 : wordIndex - 1
-        ];
-      const wordAfter =
-        searchedWords[
-          searchedWords.length - 1 === wordIndex ? 0 : wordIndex + 1
-        ];
-      const sortedWords = uniq([
-        currentWord,
-        wordAfter,
-        wordBefore,
-        ...searchedWords,
-      ]);
-      rearrangementVariations(sortedWords);
+      const sortedWords = sortingWords(searchedWords, currentWord);
+      return rearrangementVariations(sortedWords);
     } else {
-      return;
+      const newWords = generateKeywordArray(e.target.value, splitter);
+      const sortedWords = sortingWords(newWords.reverse(), currentWord);
+      return getVariations(newWords, sortedWords);
     }
   };
 
   onChange = (e) => {
-    const { getVariations, searchedWords: lastWords, queryMode } = this.props;
+    console.log('On Change');
+    const {
+      getVariations,
+      searchedWords: lastWords,
+      queryMode,
+      clearVariations,
+    } = this.props;
     const splitter = queryMode ? /or|OR|Or|oR/ : ',';
     const words = generateKeywordArray(e.target.value, splitter);
-    console.log(words);
+
     clearTimeout(timeout);
     if (words.length > 0 && !arrayEquals(lastWords)) {
-      const searchWords = uniq([...words.reverse(), ...lastWords]);
+      const searchWords = words.reverse();
       timeout = setTimeout(function () {
-        getVariations(searchWords);
+        getVariations(searchWords, searchWords);
       }, 1000);
       return timeout;
+    } else if (e.target.value === '') {
+      clearVariations();
     } else {
       return;
     }
@@ -141,9 +147,11 @@ const mapStateToProps = (state) => {
 };
 
 const mapDispatchToProps = (dispatch) => ({
-  getVariations: (words) => dispatch(variationsActions.getVariations(words)),
+  getVariations: (searchWords, sortedWords) =>
+    dispatch(variationsActions.getVariations(searchWords, sortedWords)),
   rearrangementVariations: (words) =>
     dispatch(variationsActions.rearrangementVariations(words)),
+  clearVariations: () => dispatch(variationsActions.clearVariations()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TextArea);

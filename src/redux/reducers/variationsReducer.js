@@ -1,7 +1,6 @@
 import { variationsConstants } from 'redux/actions/types';
-import { copyToClipboard } from 'utils';
-import uniqWith from 'lodash/uniqWith';
-import isEqual from 'lodash/isEqual';
+import { copyToClipboard, sortingVariations } from 'utils';
+
 function variations(
   state = {
     loading: false,
@@ -9,20 +8,10 @@ function variations(
     searchedWords: [],
     queryMode: false,
     error: null,
+    copiedVariation: '',
   },
   action
 ) {
-  let newVariation;
-  function sortingVariations(searchedWords, variations) {
-    newVariation = [];
-    searchedWords.map((word) => {
-      return variations.map(
-        (variation) => variation.word === word && newVariation.push(variation)
-      );
-    });
-    newVariation = uniqWith([...newVariation, ...state.variations], isEqual);
-    return newVariation;
-  }
   switch (action.type) {
     case variationsConstants.GET_VARIATIONS_REQUEST:
       return {
@@ -34,7 +23,7 @@ function variations(
       return {
         ...state,
         loading: false,
-        variations: sortingVariations(state.searchedWords, action.variations),
+        variations: sortingVariations(action.variations, action.sortedWords),
       };
     case variationsConstants.GET_VARIATIONS_FAILURE:
       return {
@@ -42,18 +31,19 @@ function variations(
         loading: false,
         error: action.error,
       };
-    case variationsConstants.SER_QUERY_MODE:
+    case variationsConstants.SET_QUERY_MODE:
       return {
         ...state,
         queryMode: action.queryMode,
+        variations: [],
       };
     case variationsConstants.REARRANGEMENT_VARIATIONS:
       return {
         ...state,
-        variations: sortingVariations(action.words, state.variations),
+        variations: sortingVariations(state.variations, action.words),
       };
     case variationsConstants.COPY_VARIATIONS:
-      newVariation = state.variations.map((variation) => {
+      state.variations.map((variation) => {
         if (variation.word === action.word) {
           let copiedString = '';
           const spacers = state.queryMode ? ' OR ' : ',';
@@ -63,16 +53,28 @@ function variations(
               : (copiedString += `${spacers}${word}`)
           );
           copyToClipboard(copiedString);
-          return { ...variation, copied: true };
+          return variation;
         } else {
-          return { ...variation, copied: false };
+          return variation;
         }
       });
       return {
         ...state,
-        variations: newVariation,
+        copiedWord: '',
+        copiedVariation: action.word,
       };
-
+    case variationsConstants.CLEAR_VARIATIONS:
+      return {
+        ...state,
+        variations: [],
+      };
+    case variationsConstants.COPY_WORD:
+      copyToClipboard(action.word);
+      return {
+        ...state,
+        copiedVariation: '',
+        copiedWord: action.word,
+      };
     default:
       return state;
   }
