@@ -36,6 +36,8 @@ function variations(
         ...state,
         queryMode: action.queryMode,
         variations: [],
+        searchedWords: [],
+        copiedVariation: '',
       };
     case variationsConstants.REARRANGEMENT_VARIATIONS:
       return {
